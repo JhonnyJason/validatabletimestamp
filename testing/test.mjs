@@ -1,4 +1,4 @@
-import { setTimeFrameMS, create, assertValidity } from "../output/index.js"
+import { setTimeFrameMS, create, assertValidity, checkValidity } from "../output/index.js"
 
 
 //==========================================================================
@@ -9,9 +9,12 @@ async function sloppyTest(timeFrame = 1000) {
     setTimeFrameMS(timeFrame)
 
     var stamp = create()
+    var err = ""
 
     // initial assertValidity Test
     try {
+        err = checkValidity(stamp)
+        if(err) { throw new Error("Validity check returned truly: "+err) }
         assertValidity(stamp)    
     } catch(error) {
         throw new Error("Unexpected error on initial assertValidity: "+error.message)
@@ -21,6 +24,8 @@ async function sloppyTest(timeFrame = 1000) {
 
     // next assertValidity Test
     try {
+        err = checkValidity(stamp)
+        if(err) { throw new Error("Validity check returned truly: "+err) }
         assertValidity(stamp)    
     } catch(error) {
         throw new Error("Unexpected error on next assertValidity: "+error.message)
@@ -28,11 +33,23 @@ async function sloppyTest(timeFrame = 1000) {
 
     await waitMS(timeFrame)
 
+    var success = true
     // last assertValidity Test
     try {
-        assertValidity(stamp)    
-        throw new Error("Unexpectedly no error throw on last assertValidity!")
-    } catch(error) { }
+        err = checkValidity(stamp)
+        if(!err) {
+            success = false 
+            throw new Error("Validity check returned falsly: "+err) 
+        }
+        assertValidity(stamp)
+        success = false
+        throw new Error("Unexpectedly no error thrown on last assertValidity!")
+    } catch(error) {  
+        if(!success) {
+            throw new Error("Last Validity should be invalid but failed due to: "+error.message)
+        } 
+    }
+
 
 }
 
